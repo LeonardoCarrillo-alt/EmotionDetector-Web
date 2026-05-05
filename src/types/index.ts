@@ -1,7 +1,7 @@
 // Tipos para el usuario
 export interface User {
   id: string;
-  email: string;
+  username: string;
   createdAt: string;
 }
 
@@ -46,8 +46,8 @@ export interface AuthContextType {
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, confirmPassword: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<boolean>;
+  register: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   setError: (error: string | null) => void;
 }

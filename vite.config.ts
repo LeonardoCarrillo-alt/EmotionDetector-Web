@@ -6,4 +6,13 @@ export default defineConfig({
   plugins: [
     react(),
   ],
+  server: {
+    proxy: {
+      '/dev': {
+        target: 'https://ao8lb9a0o2.execute-api.us-east-1.amazonaws.com',
+        changeOrigin: true,
+        secure: true
+      }
+    }
+  }
 })

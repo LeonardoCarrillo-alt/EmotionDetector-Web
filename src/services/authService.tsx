@@ -1,40 +1,83 @@
-import api from './api'
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV
+    ? '/dev'
+    : 'https://ao8lb9a0o2.execute-api.us-east-1.amazonaws.com/dev');
 
-export const register = async (userData) => {
-  try {
-    const response = await api.post('/auth/register', {
-      email: userData.email,
-      password: userData.password
-    })
-    return response.data
-  } catch (error) {
-    throw new Error(error.response?.data?.message || 'Error en el registro')
-  }
-}
+type AuthResponse = {
+  message?: string;
+  token?: string;
+  user?: { id?: string; username?: string; createdAt?: string };
+};
 
-export const login = async (credentials) => {
-  try {
-    const response = await api.post('/auth/login', {
-      email: credentials.email,
-      password: credentials.password
-    })
-    return response.data
-  } catch (error) {
-    throw new Error(error.response?.data?.message || 'Error en el login')
+const parseJson = async (response: Response) => {
+  const text = await response.text();
+  if (!text) {
+    return {};
   }
-}
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+};
+
+export const register = async (username: string, password: string): Promise<AuthResponse> => {
+  console.log('[register] request', { username, hasPassword: !!password });
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await parseJson(response);
+    console.log('[register] response', { ok: response.ok, status: response.status, data });
+
+    if (!response.ok) {
+      throw new Error(data.message || data.error || 'Error en el registro');
+    }
+    return data;
+  } catch (error) {
+    console.error('[register] error', error);
+    throw error instanceof Error ? error : new Error('Error en el registro');
+  }
+};
+
+export const login = async (username: string, password: string): Promise<AuthResponse> => {
+  console.log('[login] request', { username, hasPassword: !!password });
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await parseJson(response);
+    console.log('[login] response', { ok: response.ok, status: response.status, data });
+
+    if (!response.ok) {
+      throw new Error(data.message || data.error || 'Error en el login');
+    }
+
+    if (data.token) {
+      localStorage.setItem('emotion_detector_token', data.token);
+      console.log('[login] token guardado en localStorage');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('[login] error', error);
+    throw error instanceof Error ? error : new Error('Error en el login');
+  }
+};
 
 export const logout = () => {
-  // Solo limpiamos el frontend, no hay endpoint de logout
-  localStorage.removeItem('emotion_detector_token')
-  localStorage.removeItem('emotion_detector_user')
-}
+  localStorage.removeItem('emotion_detector_token');
+  localStorage.removeItem('emotion_detector_user');
+};
 
 export const getCurrentUser = () => {
-  const user = localStorage.getItem('emotion_detector_user')
-  return user ? JSON.parse(user) : null
-}
+  const user = localStorage.getItem('emotion_detector_user');
+  return user ? JSON.parse(user) : null;
+};
 
-export const isAuthenticated = () => {
-  return !!localStorage.getItem('emotion_detector_token')
-}
+export const isAuthenticated = () => !!localStorage.getItem('emotion_detector_token');

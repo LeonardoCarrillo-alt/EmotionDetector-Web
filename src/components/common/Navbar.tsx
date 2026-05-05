@@ -41,7 +41,7 @@ export const Navbar: React.FC = () => {
             </Link>
             <span style={{ fontSize: '0.9rem', color: '#666', background: '#f0f0f0', padding: '4px 12px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <User size={14} />
-              {user?.email}
+              {user?.username}
             </span>
             <button
               onClick={handleLogout}

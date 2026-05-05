@@ -1,15 +1,9 @@
-import React, { createContext, useState, useEffect} from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import type { User, AuthContextType } from '../types';
 import type { ReactNode } from 'react';
+import { login as loginRequest, register as registerRequest } from '../services/authService';
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Mock de usuario para demo
-const MOCK_USER: User = {
-  id: '1',
-  email: 'demo@emotiondetector.com',
-  createdAt: new Date().toISOString()
-};
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -17,10 +11,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simular carga de sesión
-    const storedUser = localStorage.getItem('demo_user');
-    const storedToken = localStorage.getItem('demo_token');
-    
+    const storedUser = localStorage.getItem('emotion_detector_user');
+    const storedToken = localStorage.getItem('emotion_detector_token');
+    console.log('[auth] restoring session', { hasUser: !!storedUser, hasToken: !!storedToken });
+
     if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
       setToken(storedToken);
@@ -28,58 +22,54 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (username: string, password: string): Promise<boolean> => {
     setError(null);
-    
-    // Simular validación
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    if (email && password.length >= 3) {
-      const demoUser = { ...MOCK_USER, email };
-      localStorage.setItem('demo_user', JSON.stringify(demoUser));
-      localStorage.setItem('demo_token', 'mock_jwt_token_demo');
-      setUser(demoUser);
-      setToken('mock_jwt_token_demo');
+    try {
+      const response = await loginRequest(username, password);
+      const savedToken = response.token || localStorage.getItem('emotion_detector_token');
+      const authUser: User = {
+        id: response.user?.id || Date.now().toString(),
+        username: response.user?.username || username,
+        createdAt: response.user?.createdAt || new Date().toISOString()
+      };
+
+      localStorage.setItem('emotion_detector_user', JSON.stringify(authUser));
+      if (savedToken) {
+        localStorage.setItem('emotion_detector_token', savedToken);
+      }
+
+      setUser(authUser);
+      setToken(savedToken || null);
+      console.log('[auth] login success', { username: authUser.username });
       return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Credenciales inválidas';
+      setError(message);
+      console.error('[auth] login error', err);
+      return false;
     }
-    
-    setError('Credenciales inválidas para la demo');
-    return false;
   };
 
-  const register = async (email: string, password: string, confirmPassword: string): Promise<boolean> => {
+  const register = async (username: string, password: string): Promise<boolean> => {
     setError(null);
-    
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    if (!email.includes('@')) {
-      setError('Email inválido');
+    try {
+      const response = await registerRequest(username, password);
+      console.log('[auth] register success', response);
+      return await login(username, password);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error en el registro';
+      setError(message);
+      console.error('[auth] register error', err);
       return false;
     }
-    
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
-      return false;
-    }
-    
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      return false;
-    }
-    
-    const newUser = { ...MOCK_USER, email, id: Date.now().toString() };
-    localStorage.setItem('demo_user', JSON.stringify(newUser));
-    localStorage.setItem('demo_token', 'mock_jwt_token_demo');
-    setUser(newUser);
-    setToken('mock_jwt_token_demo');
-    return true;
   };
 
   const logout = () => {
-    localStorage.removeItem('demo_user');
-    localStorage.removeItem('demo_token');
+    localStorage.removeItem('emotion_detector_user');
+    localStorage.removeItem('emotion_detector_token');
     setUser(null);
     setToken(null);
+    console.log('[auth] session closed');
   };
 
   return (
