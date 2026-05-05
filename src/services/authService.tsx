@@ -7,6 +7,9 @@ const API_BASE_URL =
 type AuthResponse = {
   message?: string;
   token?: string;
+  accessToken?: string;
+  idToken?: string;
+  jwt?: string;
   user?: { id?: string; username?: string; createdAt?: string };
 };
 
@@ -58,8 +61,9 @@ export const login = async (username: string, password: string): Promise<AuthRes
       throw new Error(data.message || data.error || 'Error en el login');
     }
 
-    if (data.token) {
-      localStorage.setItem('emotion_detector_token', data.token);
+    const resolvedToken = data.token || data.accessToken || data.idToken || data.jwt;
+    if (resolvedToken) {
+      localStorage.setItem('emotion_detector_token', resolvedToken);
       console.log('[login] token guardado en localStorage');
     }
 

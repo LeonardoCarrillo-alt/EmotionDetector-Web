@@ -37,8 +37,11 @@ export const analyzeImage = async (file: File) => {
 
     const dataUrl = await fileToBase64(file);
     const base64Image = dataUrl.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '');
-    const token = localStorage.getItem('emotion_detector_token');
-    console.log('[analyzeImage] base64 length', base64Image.length);
+    const token =
+      localStorage.getItem('emotion_detector_token') ||
+      localStorage.getItem('access_token') ||
+      localStorage.getItem('token');
+    console.log('[analyzeImage] payload lengths', { dataUrl: dataUrl.length, base64: base64Image.length, hasToken: !!token });
 
     const response = await fetch(`${API_BASE_URL}/analyze`, {
       method: 'POST',
@@ -46,13 +49,21 @@ export const analyzeImage = async (file: File) => {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
-      body: JSON.stringify({ image: base64Image })
+      body: JSON.stringify({
+        // Backward/forward compatibility with different backend contracts
+        image: dataUrl,
+        imageBase64: base64Image,
+        base64Image
+      })
     });
 
     const data = await parseJson(response);
     console.log('[analyzeImage] response', { ok: response.ok, status: response.status, data });
 
     if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error(data.message || data.error || 'Forbidden: token invalido o sin permisos para analizar');
+      }
       throw new Error(data.message || data.error || 'Error al analizar la imagen');
     }
     return data;
