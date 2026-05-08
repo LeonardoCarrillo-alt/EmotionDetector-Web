@@ -31,12 +31,25 @@ export interface AnalysisResult {
 }
 
 // Tipos para historial
+export interface HistoryFaceEmotion {
+  Type: string;
+  Confidence: number;
+}
+
+export interface HistoryFace {
+  faceIndex: number;
+  emotions: HistoryFaceEmotion[];
+  ageRange?: { Low: number; High: number };
+  gender?: string;
+}
+
 export interface HistoryItem {
   id: string;
   imageUrl: string;
   totalFaces: number;
   dominantEmotion: string | null;
   createdAt: string;
+  faces?: HistoryFace[];
 }
 
 // Tipos para contexto de autenticación

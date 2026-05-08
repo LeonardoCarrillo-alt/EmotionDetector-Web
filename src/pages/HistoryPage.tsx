@@ -1,7 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { emotionIcons } from '../mocks/mockData';
 import type { HistoryItem } from '../types';
-import { History as HistoryIcon, Users, Trash2, ArrowRight } from 'lucide-react';
+import { History as HistoryIcon, Users, Trash2, Smile, Heart, Frown, AlertCircle, HelpCircle, Eye, Zap } from 'lucide-react';
+
+const emotionConfig: Record<string, { icon: React.ReactNode; color: string; bgColor: string }> = {
+  HAPPY:     { icon: <Smile size={16} />,        color: '#FFD700', bgColor: '#FFF9E6' },
+  CALM:      { icon: <Heart size={16} />,        color: '#4CAF50', bgColor: '#E8F5E9' },
+  ANGRY:     { icon: <AlertCircle size={16} />,  color: '#FF6B6B', bgColor: '#FFEBEE' },
+  SAD:       { icon: <Frown size={16} />,        color: '#2196F3', bgColor: '#E3F2FD' },
+  CONFUSED:  { icon: <HelpCircle size={16} />,   color: '#9C27B0', bgColor: '#F3E5F5' },
+  DISGUSTED: { icon: <Zap size={16} />,          color: '#FF9800', bgColor: '#FFF3E0' },
+  SURPRISED: { icon: <Eye size={16} />,          color: '#E91E63', bgColor: '#FCE4EC' },
+  FEAR:      { icon: <AlertCircle size={16} />,  color: '#8B0000', bgColor: '#FFEBEE' },
+};
 
 export const HistoryPage: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -42,13 +52,7 @@ export const HistoryPage: React.FC = () => {
     }
   };
 
-  const getEmotionIcon = (emotion: string | null) => {
-  return emotionIcons[emotion || 'NEUTRAL'] || '😐';
-  };
 
-  const getEmotionClass = (emotion: string | null) => {
-  return emotion === 'HAPPY' ? 'tag happy' : 'tag';
-  };
 
   return (
     <div className="container">
@@ -85,17 +89,66 @@ export const HistoryPage: React.FC = () => {
                     {item.totalFaces} rostro(s)
                   </div>
                   <div className="stat" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    Principal: {item.dominantEmotion || 'SIN DETECTAR'}
+                    <span style={{ color: emotionConfig[item.dominantEmotion || '']?.color }}>
+                      {emotionConfig[item.dominantEmotion || '']?.icon}
+                    </span>
+                    Emoción principal: <strong>{item.dominantEmotion || 'SIN DETECTAR'}</strong>
                   </div>
                 </div>
-                <div className="emotion-tags">
-                  <span className={getEmotionClass(item.dominantEmotion)}>
-                    {getEmotionIcon(item.dominantEmotion)}{item.dominantEmotion || 'SIN DETECTAR'}
-                  </span>
-                  <span className="tag" style={{ cursor: 'pointer', fontWeight: 'bold', color: '#667eea', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    Ver detalles <ArrowRight size={14} />
-                  </span>
-                </div>
+
+                {/* Emociones por cara */}
+                {item.faces?.map((face, faceIdx) => (
+                  <div key={faceIdx} style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: '#f8f9fa', borderRadius: '6px', border: '1px solid #e0e0e0' }}>
+                    <p style={{ margin: '0 0 0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>Cara {face.faceIndex + 1}</p>
+
+                    {face.gender && (
+                      <p style={{ margin: '0 0 0.25rem', fontSize: '0.85rem' }}>
+                        <strong>Género:</strong> {face.gender}
+                      </p>
+                    )}
+                    {face.ageRange && (
+                      <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem' }}>
+                        <strong>Edad estimada:</strong> {face.ageRange.Low} - {face.ageRange.High} años
+                      </p>
+                    )}
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      {face.emotions.map((emotion, emoIdx) => {
+                        const config = emotionConfig[emotion.Type] || { icon: null, color: '#666', bgColor: '#f0f0f0' };
+                        return (
+                          <div
+                            key={emoIdx}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              padding: '0.5rem 0.75rem',
+                              backgroundColor: config.bgColor,
+                              borderRadius: '6px',
+                              border: `1px solid ${config.color}40`,
+                              gap: '0.5rem'
+                            }}
+                          >
+                            <span style={{ color: config.color, display: 'flex' }}>{config.icon}</span>
+                            <span style={{ fontSize: '0.85rem', fontWeight: '500', minWidth: '90px' }}>{emotion.Type}</span>
+                            <div style={{ flex: 1, height: '16px', backgroundColor: '#e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
+                              <div
+                                style={{
+                                  height: '100%',
+                                  width: `${emotion.Confidence}%`,
+                                  backgroundColor: config.color,
+                                  transition: 'width 0.3s ease'
+                                }}
+                              />
+                            </div>
+                            <span style={{ fontSize: '0.85rem', minWidth: '52px', textAlign: 'right', fontWeight: '500' }}>
+                              {emotion.Confidence.toFixed(1)}%
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
               <button
                 onClick={(e) => {

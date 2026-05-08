@@ -193,13 +193,12 @@ body {
 }
 
 .history-card {
-    background: var(--white);
-    border-radius: var(--radius-card);
-    padding: 20px;
-    display: flex;
-    gap: 20px;
-    transition: transform 0.2s, box-shadow 0.2s;
-    cursor: pointer;
+  background: white;
+  border-radius: 16px;
+  padding: 1rem;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 .history-card:hover {
@@ -208,10 +207,11 @@ body {
 }
 
 .history-thumbnail {
-    width: 120px;
-    height: 120px;
-    object-fit: cover;
-    border-radius: 10px;
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  border-radius: 12px;
+  margin-bottom: 1rem;
 }
 
 .history-info {
