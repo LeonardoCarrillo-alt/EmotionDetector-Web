@@ -1,0 +1,6 @@
+/* Estilos específicos de App.tsx si fueran necesarios */
+.app-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
